@@ -13,28 +13,45 @@ import (
 
 // registerCmd represents the register command
 var registerCmd = &cobra.Command{
-	Use:   "register [flags] [MAC]",
+	Use:   "register [MAC]",
 	Short: "Register the MAC address you want to use.",
 	Long: `To make WOL easier, I thought the best thing to do would be to register it in a database 
 	so that it could be called easily.`,
-	Args: cobra.ExactArgs(2),
+	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		db, err := sql.Open("sqlite3", "./data.sql")
-		if err != err {
-			log.Fatal(err)
-		}
-		defer db.Close()
+		address := args[0]
+		Register(address)
 
-		createTable := `CREATE TABLE IF NOT EXISTS macadr (
+	},
+}
+
+func Register(mac string) {
+	db, err := sql.Open("sqlite3", "./data.sql")
+	if err != err {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	createTable := `CREATE TABLE IF NOT EXISTS macadr (
 		"id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-		"mac_adress" TEXT NOT NULL UNIQUE
+		"mac_address" TEXT NOT NULL UNIQUE
 		);`
 
-		_, err = db.Exec(createTable)
-		if err != nil {
-			log.Fatal()
-		}
-	},
+	_, err = db.Exec(createTable)
+	if err != nil {
+		log.Fatal()
+	}
+
+	registerMAC := `INSERT INTO macadr (mac_address) VALUES(?) `
+
+	address := mac
+
+	_, err = db.Exec(registerMAC, address)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println("MACアドレスが正常に登録されました")
 }
 
 func init() {
